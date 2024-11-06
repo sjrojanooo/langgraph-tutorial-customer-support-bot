@@ -1,0 +1,7 @@
+.env
+*__pycache__/
+*.DS_Store
+venv
+
+database/travel2.backup.sqlite
+database/travel2.sqlite
