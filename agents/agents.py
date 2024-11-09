@@ -7,58 +7,10 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables import Runnable, RunnableConfig
 from typing_extensions import TypedDict
 from langgraph.graph.message import AnyMessage, add_messages
-from langchain_community.tools.tavily_search import TavilySearchResults
 
 from state.state import AgentState
-from tools.policies import lookup_policy
-from tools.flights import (
-    fetch_user_flight_information, 
-    search_flights,
-    update_ticket_to_new_flight, 
-    cancel_ticket
-)
-from tools.car_rentals import (
-    search_car_rentals,
-    book_car_rental,
-    update_car_rental,
-    cancel_car_rental
-)
-
-from tools.hotels import (
-    search_hotels,
-    book_hotel,
-    update_hotel,
-    cancel_hotel
-)
-
-from tools.excursions import (
-    search_trip_recommendations,
-    book_excursion,
-    update_excursion,
-    cancel_excursion
-)
-
-
-TOOL_LIST = [
-    TavilySearchResults(max_results=1),
-    fetch_user_flight_information,
-    search_flights,
-    lookup_policy,
-    update_ticket_to_new_flight,
-    cancel_ticket,
-    search_car_rentals,
-    book_car_rental,
-    update_car_rental,
-    cancel_car_rental,
-    search_hotels,
-    book_hotel,
-    update_hotel,
-    cancel_hotel,
-    search_trip_recommendations,
-    book_excursion,
-    update_excursion,
-    cancel_excursion
-]
+from tools.constants import COMPLETE_TOOL_LIST, SENSITIVE_TOOL_NAMES
+from tools.flights import fetch_user_flight_information
     
 def assistant_agent(state: AgentState, config: RunnableConfig) -> AgentState: 
     llm = ChatAnthropic(model="claude-3-sonnet-20240229", temperature=1)
@@ -76,7 +28,7 @@ def assistant_agent(state: AgentState, config: RunnableConfig) -> AgentState:
             MessagesPlaceholder(variable_name="messages")
         ]
     ).partial(time=datetime.now())
-    chain = assistant_agent_prompt | llm.bind_tools(TOOL_LIST)
+    chain = assistant_agent_prompt | llm.bind_tools(COMPLETE_TOOL_LIST)
     
     while True: 
         result = chain.invoke(state)
