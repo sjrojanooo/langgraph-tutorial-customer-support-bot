@@ -1,17 +1,67 @@
-# Let's create an example conversation a user might have with the assistant
-tutorial_questions = [
-    "Hi there, what time is my flight?",
-    "Am i allowed to update my flight to something sooner? I want to leave later today.",
-    "Update my flight to sometime next week then",
-    "The next available option is great",
-    "what about lodging and transportation?",
-    "Yeah i think i'd like an affordable hotel for my week-long stay (7 days). And I'll want to rent a car.",
-    "OK could you place a reservation for your recommended hotel? It sounds nice.",
-    "yes go ahead and book anything that's moderate expense and has availability.",
-    "Now for a car, what are my options?",
-    "Awesome let's just get the cheapest option. Go ahead and book for 7 days",
-    "Cool so now what recommendations do you have on excursions?",
-    "Are they available while I'm there?",
-    "interesting - i like the museums, what options are there? ",
-    "OK great pick one and book it for my second day there.",
+import sys
+sys.path.append(".")
+from dotenv import load_dotenv
+load_dotenv()
+
+from langchain_community.tools.tavily_search import TavilySearchResults
+
+from tools.policies import lookup_policy
+from tools.flights import (
+    fetch_user_flight_information, 
+    search_flights,
+    update_ticket_to_new_flight, 
+    cancel_ticket
+)
+from tools.car_rentals import (
+    search_car_rentals,
+    book_car_rental,
+    update_car_rental,
+    cancel_car_rental
+)
+
+from tools.hotels import (
+    search_hotels,
+    book_hotel,
+    update_hotel,
+    cancel_hotel
+)
+
+from tools.excursions import (
+    search_trip_recommendations,
+    book_excursion,
+    update_excursion,
+    cancel_excursion
+)
+
+# read only tools and will not require user approval
+SAFE_TOOL_LIST = [
+    TavilySearchResults(max_results=1),
+    fetch_user_flight_information, 
+    search_flights,
+    lookup_policy,
+    search_car_rentals, 
+    search_hotels, 
+    search_trip_recommendations
 ]
+
+# Sesnsitive tools require the users approval 
+# making any updates to their trip
+SENSITIVE_TOOL_LIST = [
+    update_ticket_to_new_flight,
+    cancel_ticket,
+    book_car_rental,
+    update_car_rental,
+    cancel_car_rental,
+    book_hotel,
+    update_hotel,
+    cancel_hotel,
+    book_excursion,
+    update_excursion,
+    cancel_excursion
+]
+
+# Complete list of tools
+COMPLETE_TOOL_LIST = SAFE_TOOL_LIST + SENSITIVE_TOOL_LIST
+
+# Sensitive Tool Names
+SENSITIVE_TOOL_NAMES = {t.name for t in SENSITIVE_TOOL_LIST}

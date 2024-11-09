@@ -1,8 +1,10 @@
+from langgraph.graph import END
 from langchain_core.messages import ToolMessage
 from langchain_core.runnables import RunnableLambda
+from langgraph.prebuilt import ToolNode, tools_condition
 
-from langgraph.prebuilt import ToolNode
-
+from state.state import AgentState
+from tools.constants import SENSITIVE_TOOL_NAMES
 
 def handle_tool_error(state) -> dict:
     error = state.get("error")
@@ -43,3 +45,20 @@ def _print_event(event: dict, _printed: set, max_length=1500):
 def write_graph_to_pdf(graph: object, filename: str) -> None:
     with open(f"graph_pngs/{filename}.png", "wb") as f: 
         f.write(graph.get_graph().draw_mermaid_png())
+        
+        
+def route_tools_condition(state: AgentState) -> str: 
+    # tools condition returns either a value error when no message exists, 
+    # "tools", or "__end__" as the next node 
+    # https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.tool_node.tools_condition
+    next_node = tools_condition(state)
+    # If no nodes are invoked return to the user
+    if next_node == END: 
+        return END
+    ai_message = state["messages"][-1]
+    # This assumes single tool calls. To handle parallel tool calling, you'd want to
+    # use an ANY condition
+    first_tool_call = ai_message.tool_calls[0]
+    if first_tool_call["name"] in SENSITIVE_TOOL_NAMES: 
+        return "sensitive_tools"
+    return "safe_tools"
